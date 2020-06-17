@@ -33,13 +33,13 @@ void handleReady(const Rest::Request&, Http::ResponseWriter response) {
 
 class StatsEndpoint {
 public:
-    StatsEndpoint(Address addr)
+    explicit StatsEndpoint(Address addr)
         : httpEndpoint(std::make_shared<Http::Endpoint>(addr))
     { }
 
     void init(size_t thr = 2) {
         auto opts = Http::Endpoint::options()
-            .threads(thr);
+            .threads(static_cast<int>(thr));
         httpEndpoint->init(opts);
         setupRoutes();
     }
@@ -112,7 +112,7 @@ private:
 
     class Metric {
     public:
-        Metric(std::string name, int initialValue = 1)
+        explicit Metric(std::string name, int initialValue = 1)
             : name_(std::move(name))
             , value_(initialValue)
         { }
@@ -127,7 +127,7 @@ private:
             return value_;
         }
 
-        std::string name() const {
+        const std::string& name() const {
             return name_;
         }
     private:
@@ -135,8 +135,8 @@ private:
         int value_;
     };
 
-    typedef std::mutex Lock;
-    typedef std::lock_guard<Lock> Guard;
+    using Lock = std::mutex;
+    using Guard = std::lock_guard<Lock>;
     Lock metricsLock;
     std::vector<Metric> metrics;
 
@@ -150,10 +150,10 @@ int main(int argc, char *argv[]) {
     int thr = 2;
 
     if (argc >= 2) {
-        port = std::stol(argv[1]);
+        port = static_cast<uint16_t>(std::stol(argv[1]));
 
         if (argc == 3)
-            thr = std::stol(argv[2]);
+            thr = std::stoi(argv[2]);
     }
 
     Address addr(Ipv4::any(), port);
